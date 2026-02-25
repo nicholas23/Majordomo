@@ -1,0 +1,181 @@
+/* Custom UI-UX-Pro-Max SaaS Dark Theme Overrides for Bootstrap 5 */
+[data-bs-theme="dark"] {
+    /* Base background (App layout BG - Deep dark gray/blue) */
+    --bs-body-bg: #0B0F19;
+    /* Very deep dark */
+    --bs-body-bg-rgb: 11, 15, 25;
+    --bs-body-color: #F8FAFC;
+    --bs-body-color-rgb: 248, 250, 252;
+
+    /* Typography */
+    --bs-font-sans-serif: 'Plus Jakarta Sans', 'Inter', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+
+    /* Primary Color (Vibrant Indigo - Modern SaaS look) */
+    --bs-primary: #6366F1;
+    --bs-primary-rgb: 99, 102, 241;
+    --bs-primary-text-emphasis: #818CF8;
+    --bs-primary-bg-subtle: rgba(99, 102, 241, 0.15);
+    --bs-primary-border-subtle: rgba(99, 102, 241, 0.3);
+
+    /* Dark utilities (mapped to elevated surface like Sidebar / Cards) */
+    --bs-dark: #111827;
+    /* Gray 900 */
+    --bs-dark-rgb: 17, 24, 39;
+    --bs-dark-bg-subtle: #1F2937;
+    /* Gray 800 for hovering */
+    --bs-dark-border-subtle: #374151;
+    /* Gray 700 */
+
+    /* Secondary utilities (Muted text & subtle badges) */
+    --bs-secondary: #9CA3AF;
+    /* Gray 400 */
+    --bs-secondary-rgb: 156, 163, 175;
+    --bs-secondary-bg: #374151;
+    /* Gray 700 */
+    --bs-secondary-color: #9CA3AF;
+
+    /* Borders: Soft separators */
+    --bs-border-color: #1F2937;
+    /* Gray 800 */
+    --bs-border-color-translucent: rgba(255, 255, 255, 0.08);
+
+    /* Form controls */
+    --bs-tertiary-bg: #111827;
+
+    /* Shadows & Effects */
+    --bs-box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+    --bs-box-shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --bs-box-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+}
+
+/* Global Typography tweaks */
+body {
+    letter-spacing: 0.015em;
+}
+
+/* Elegant scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4B5563;
+}
+
+/* Sidebars and Topbars using bg-dark */
+.bg-dark {
+    background-color: var(--bs-dark) !important;
+}
+
+/* Give main content a slightly darker flush background to pop the cards */
+.content-area,
+main#workspace-display {
+    background-color: var(--bs-body-bg) !important;
+}
+
+/* Soften all Cards */
+.card {
+    background-color: #111827 !important;
+    /* Gray 900 */
+    border: 1px solid #1F2937 !important;
+    /* Gray 800 */
+    border-radius: 1rem;
+    box-shadow: var(--bs-box-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--bs-box-shadow-lg);
+}
+
+.card-header {
+    background-color: transparent !important;
+    border-bottom: 1px solid #1F2937 !important;
+}
+
+/* Input Fields & Forms */
+.form-control,
+.form-select {
+    background-color: #1F2937 !important;
+    /* Gray 800 */
+    border: 1px solid #374151 !important;
+    /* Gray 700 */
+    color: #F3F4F6 !important;
+    /* Gray 100 */
+    border-radius: 0.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--bs-primary) !important;
+    background-color: #111827 !important;
+    box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25) !important;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+}
+
+.btn-primary:hover {
+    background-color: #4F46E5;
+    /* Indigo 600 */
+    border-color: #4F46E5;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.23);
+}
+
+/* List Groups (Sidebar matches) */
+.list-group-item {
+    background-color: transparent !important;
+    color: #9CA3AF !important;
+    border: none !important;
+    margin-bottom: 0.25rem;
+    border-radius: 0.5rem !important;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #1F2937 !important;
+    /* Gray 800 */
+    color: #F9FAFB !important;
+}
+
+.list-group-item.active {
+    background-color: var(--bs-primary-bg-subtle) !important;
+    color: var(--bs-primary) !important;
+    font-weight: 600;
+}
+
+/* Badges */
+.badge {
+    padding: 0.35em 0.65em;
+    border-radius: 9999px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+/* Chat Bubbles (SaaS Glassmorphism touch) */
+.bg-dark-subtle {
+    background-color: #1F2937 !important;
+    border-color: #374151 !important;
+}

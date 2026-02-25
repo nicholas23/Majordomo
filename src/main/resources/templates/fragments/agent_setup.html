@@ -1,0 +1,143 @@
+<!-- Agent 初始化設定頁面 -->
+<div class="d-flex flex-column align-items-center h-100 p-4 p-md-5 overflow-y-auto bg-dark">
+    <div class="my-auto w-100 d-flex flex-column align-items-center" style="max-width: 560px;">
+
+        <!-- Hero Section -->
+        <div class="text-center mb-5" style="max-width: 540px;">
+            <div class="d-flex justify-content-center mb-4">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 72px; height: 72px; background: linear-gradient(135deg, var(--bs-primary-bg-subtle), var(--bs-primary-border-subtle));">
+                    <i data-lucide="bot" class="text-primary" style="width: 36px; height: 36px;"></i>
+                </div>
+            </div>
+            <h2 class="fs-4 fw-bold text-body mb-2">設定你的 AI 管家助理</h2>
+            <p class="text-secondary m-0" style="font-size: 0.9375rem; line-height: 1.6;">
+                建立一個專屬的 AI 管家，她會記住你的對話、定期執行任務，並成為你最忠誠的夥伴。
+            </p>
+        </div>
+
+        <!-- Setup Form Card -->
+        <div class="card text-bg-dark border-secondary w-100 shadow-sm">
+            <div class="card-header border-secondary-subtle py-3">
+                <h3 class="card-title fs-6 fw-semibold m-0 d-flex align-items-center gap-2">
+                    <i data-lucide="settings" style="width: 18px; height: 18px;"></i>
+                    基本設定
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <form hx-post="/web/agent/setup" hx-target="#workspace-display">
+
+                    <!-- Row: Agent Name + User Name -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 mb-0">
+                            <label class="form-label d-flex align-items-center gap-1" for="agentName">
+                                <i data-lucide="sparkles" class="text-primary" style="width: 14px; height: 14px;"></i>
+                                管家名稱
+                            </label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="agentName"
+                                name="agentName" th:value="${defaultName}" placeholder="例如：露比醬">
+                        </div>
+                        <div class="col-md-6 mb-0">
+                            <label class="form-label d-flex align-items-center gap-1" for="userName">
+                                <i data-lucide="user" class="text-primary" style="width: 14px; height: 14px;"></i>
+                                主人稱呼
+                            </label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" id="userName"
+                                name="userName" th:value="${defaultUserName}" placeholder="例如：主人">
+                        </div>
+                    </div>
+
+                    <!-- Timezone -->
+                    <div class="mb-3">
+                        <label class="form-label d-flex align-items-center gap-1" for="timezone">
+                            <i data-lucide="globe" class="text-primary" style="width: 14px; height: 14px;"></i>
+                            時區
+                        </label>
+                        <select class="form-select bg-dark text-white border-secondary" id="timezone" name="timezone">
+                            <option value="Asia/Taipei" th:selected="${defaultTimezone == 'Asia/Taipei'}">Asia/Taipei
+                                (CST +08:00)</option>
+                            <option value="Asia/Tokyo" th:selected="${defaultTimezone == 'Asia/Tokyo'}">Asia/Tokyo (JST
+                                +09:00)</option>
+                            <option value="Asia/Shanghai" th:selected="${defaultTimezone == 'Asia/Shanghai'}">
+                                Asia/Shanghai (CST +08:00)</option>
+                            <option value="America/New_York" th:selected="${defaultTimezone == 'America/New_York'}">
+                                America/New_York (EST)</option>
+                            <option value="America/Los_Angeles"
+                                th:selected="${defaultTimezone == 'America/Los_Angeles'}">America/Los_Angeles (PST)
+                            </option>
+                            <option value="Europe/London" th:selected="${defaultTimezone == 'Europe/London'}">
+                                Europe/London (GMT)</option>
+                            <option value="UTC" th:selected="${defaultTimezone == 'UTC'}">UTC</option>
+                        </select>
+                    </div>
+
+                    <!-- Response Style -->
+                    <div class="mb-4">
+                        <label class="form-label d-flex align-items-center gap-1" for="responseStyle">
+                            <i data-lucide="message-circle" class="text-primary" style="width: 14px; height: 14px;"></i>
+                            回應方式
+                        </label>
+                        <textarea class="form-control bg-dark text-white border-secondary" id="responseStyle"
+                            name="responseStyle" rows="3" th:text="${defaultResponseStyle}" placeholder="描述你希望管家如何回應"
+                            style="resize: none;"></textarea>
+                    </div>
+
+                    <!-- Divider -->
+                    <hr class="border-secondary mb-4">
+
+                    <!-- Section: About You -->
+                    <div class="mb-3">
+                        <span class="text-secondary fw-semibold text-uppercase"
+                            style="font-size: 0.8125rem; letter-spacing: 0.05em;">
+                            關於你
+                        </span>
+                    </div>
+
+                    <!-- Hobby -->
+                    <div class="mb-3">
+                        <label class="form-label d-flex align-items-center gap-1" for="hobby">
+                            <i data-lucide="heart" class="text-primary" style="width: 14px; height: 14px;"></i>
+                            你的嗜好
+                        </label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="hobby"
+                            name="hobby" value="" placeholder="描述你的嗜好或愛好，好讓管家更了解你">
+                    </div>
+
+                    <!-- Work Description -->
+                    <div class="mb-4">
+                        <label class="form-label d-flex align-items-center gap-1" for="workDescription">
+                            <i data-lucide="briefcase" class="text-primary" style="width: 14px; height: 14px;"></i>
+                            你的工作描述
+                        </label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="workDescription"
+                            name="workDescription" value="" placeholder="描述你的工作，讓管家可以提供更精準的內容">
+                    </div>
+
+                    <!-- Workspace Path (Read Only) -->
+                    <div class="mb-2">
+                        <label class="form-label d-flex align-items-center gap-1">
+                            <i data-lucide="folder" class="text-primary" style="width: 14px; height: 14px;"></i>
+                            工作區路徑
+                        </label>
+                        <div class="d-flex align-items-center gap-2 p-2 bg-dark-subtle border border-secondary rounded-2"
+                            style="font-size: 0.875rem;">
+                            <code class="font-monospace text-secondary" th:text="${defaultPath}">~/.gcwm</code>
+                        </div>
+                        <small class="text-secondary d-block mt-1" style="font-size: 0.75rem;">
+                            管家的記憶、設定與資料庫將自動儲存在此目錄
+                        </small>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex justify-content-end pt-4 mt-4 border-top border-secondary-subtle">
+                        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2"
+                            style="padding: 0.5rem 1.5rem;">
+                            <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+                            召喚管家
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

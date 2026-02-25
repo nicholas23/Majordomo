@@ -1,0 +1,256 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <!-- 頂部：工作區資訊 / 表單 -->
+    <form class="card text-bg-dark border-secondary shadow-sm mb-4" id="workspaceForm"
+        th:action="@{'/web/workspace/' + ${workspace.id}}" method="post"
+        th:attr="hx-post=@{'/web/workspace/' + ${workspace.id}}" hx-target="#workspace-display"
+        hx-swap="innerHTML transition:true">
+
+        <div class="card-header border-secondary-subtle d-flex justify-content-between align-items-center py-3">
+            <div class="card-title fs-5 fw-semibold m-0 d-flex align-items-center gap-2 user-select-none"
+                data-bs-toggle="collapse" th:data-bs-target="'#detailsSection-' + ${workspace.id}" aria-expanded="false"
+                th:aria-controls="'detailsSection-' + ${workspace.id}" role="button" style="cursor: pointer;">
+                <i data-lucide="settings" class="text-primary" style="width: 20px; height: 20px;"></i>
+                <div>工作區設定 - <span th:text="${workspace.name}"></span></div>
+                <i data-lucide="chevron-down" class="text-secondary ms-1" style="width: 16px; height: 16px;"></i>
+            </div>
+            <button type="submit" id="saveBtn" class="btn btn-primary d-flex align-items-center gap-2" disabled>
+                <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                儲存變更
+            </button>
+        </div>
+
+        <div class="collapse card-body p-4" th:id="'detailsSection-' + ${workspace.id}">
+            <!-- 名稱欄位 -->
+            <div class="mb-3">
+                <label for="name" class="form-label">名稱</label>
+                <input type="text" class="form-control bg-dark text-white border-secondary check-dirty" id="name"
+                    name="name" th:value="${workspace.name}" th:data-initial="${workspace.name}" required>
+            </div>
+
+            <!-- 路徑欄位 (含鎖定功能) -->
+            <div class="mb-3">
+                <label for="absolutePath" class="form-label">絕對路徑</label>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" id="pathLockBtn" onclick="togglePathLock()"
+                        title="解鎖編輯">
+                        <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    <input type="text" class="form-control bg-dark-subtle text-secondary border-secondary check-dirty"
+                        id="absolutePath" name="absolutePath" th:value="${workspace.absolutePath}"
+                        th:data-initial="${workspace.absolutePath}" readonly required>
+                </div>
+            </div>
+
+            <!-- 描述欄位 -->
+            <div class="mb-4">
+                <label for="description" class="form-label">描述</label>
+                <textarea class="form-control bg-dark text-white border-secondary check-dirty" id="description"
+                    name="description" rows="2" th:text="${workspace.description}"
+                    th:data-initial="${workspace.description}"></textarea>
+            </div>
+
+            <!-- 切換開關列 -->
+            <div class="row mt-4">
+                <!-- 系統啟用開關 -->
+                <div class="col-md-6 mb-3">
+                    <div
+                        class="p-3 border border-secondary rounded-3 bg-dark-subtle d-flex align-items-center justify-content-between">
+                        <div class="d-flex flex-column">
+                            <label class="fw-medium text-white small m-0" for="active">啟用 (系統)</label>
+                            <span class="small text-secondary" style="font-size: 0.75rem;">啟用後可執行排程任務</span>
+                        </div>
+                        <div>
+                            <div class="form-check form-switch m-0 fs-5">
+                                <input class="form-check-input check-dirty" type="checkbox" role="switch" id="active"
+                                    name="active" th:checked="${workspace.active}" th:data-initial="${workspace.active}"
+                                    style="cursor: pointer;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- 執行指令卡片 -->
+    <form class="card text-bg-dark border-secondary shadow-sm mb-4" id="workspaceExecuteForm"
+        th:action="@{'/web/workspace/' + ${workspace.id} + '/execute_now'}" method="post"
+        th:attr="hx-post=@{'/web/workspace/' + ${workspace.id} + '/execute_now'}" hx-target="#workspace-display">
+        <div class="card-body p-4">
+            <h5 class="card-title fs-6 fw-semibold mb-3 d-flex align-items-center gap-2">
+                <i data-lucide="terminal-square" class="text-primary" style="width: 20px; height: 20px;"></i>
+                執行指令
+            </h5>
+            <div class="input-group">
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="command" name="command"
+                    placeholder="輸入 Gemini 工作提示詞..." aria-label="輸入 Gemini 工作提示詞" required>
+                <button type="submit" id="executeBtn" class="btn btn-primary d-flex align-items-center gap-2" disabled>
+                    <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                    執行
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- 底部：分頁 -->
+    <ul class="nav nav-tabs border-secondary mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button
+                class="nav-link active bg-dark text-primary border-secondary border-bottom-0 fw-semibold d-flex align-items-center gap-2"
+                id="history-tab" th:attr="hx-get='/web/workspace/' + ${workspace.id} + '/history'"
+                hx-target='#tab-content' onclick="setActiveTab(this)" type="button" role="tab">
+                <i data-lucide="clock" style="width: 16px; height: 16px;"></i>歷史紀錄
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button
+                class="nav-link text-secondary bg-transparent border-0 opacity-75 fw-semibold d-flex align-items-center gap-2"
+                id="schedule-tab" th:attr="hx-get='/web/workspace/' + ${workspace.id} + '/schedule'"
+                hx-target='#tab-content' onclick="setActiveTab(this)" type="button" role="tab">
+                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>排程管理
+            </button>
+        </li>
+    </ul>
+
+    <div id="tab-content" th:attr="hx-get='/web/workspace/' + ${workspace.id} + '/history'" hx-trigger='load'>
+        <!-- HTMX 預設會在此載入歷史紀錄內容 -->
+        <div class="d-flex justify-content-center p-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 分頁邏輯
+        if (typeof setActiveTab === 'undefined') {
+            window.setActiveTab = function (clickedTab) {
+                document.querySelectorAll('.nav-link').forEach(tab => {
+                    tab.classList.remove('active', 'bg-dark', 'text-primary', 'border-secondary', 'border-bottom-0');
+                    tab.classList.add('text-secondary', 'bg-transparent', 'border-0', 'opacity-75');
+                });
+                clickedTab.classList.remove('text-secondary', 'bg-transparent', 'border-0', 'opacity-75');
+                clickedTab.classList.add('active', 'bg-dark', 'text-primary', 'border-secondary', 'border-bottom-0');
+            };
+        }
+
+        if (typeof historyTabRefresh === 'undefined') {
+            window.historyTabRefresh = (() => {
+                function getHistoryUrl() {
+                    return document.getElementById('history-tab')?.getAttribute('hx-get');
+                }
+
+                function refreshHistoryTab() {
+                    const historyUrl = getHistoryUrl();
+                    if (!historyUrl) {
+                        return;
+                    }
+                    htmx.ajax('GET', historyUrl, { target: '#tab-content' });
+                }
+
+                return { refreshHistoryTab };
+            })();
+        }
+
+        // 路徑鎖定邏輯
+        if (typeof togglePathLock === 'undefined') {
+            window.togglePathLock = function () {
+                const input = document.getElementById('absolutePath');
+                const btn = document.getElementById('pathLockBtn');
+
+                if (input.readOnly) {
+                    input.readOnly = false;
+                    input.classList.remove('bg-dark-subtle', 'text-secondary');
+                    input.classList.add('bg-dark', 'text-white');
+                    btn.innerHTML = '<i data-lucide="unlock" style="width: 16px; height: 16px;"></i>';
+                    btn.classList.add('text-warning', 'border-warning');
+                } else {
+                    input.readOnly = true;
+                    input.classList.remove('bg-dark', 'text-white');
+                    input.classList.add('bg-dark-subtle', 'text-secondary');
+                    btn.innerHTML = '<i data-lucide="lock" style="width: 16px; height: 16px;"></i>';
+                    btn.classList.remove('text-warning', 'border-warning');
+                }
+                lucide.createIcons();
+            };
+        }
+
+        // 變更檢測邏輯
+        function initDirtyCheck() {
+            document.querySelectorAll('.check-dirty').forEach(el => {
+                el.removeEventListener('input', checkDirty);
+                el.removeEventListener('change', checkDirty);
+                el.addEventListener('input', checkDirty);
+                el.addEventListener('change', checkDirty);
+            });
+            const cmdInput = document.getElementById('command');
+            if (cmdInput) {
+                cmdInput.removeEventListener('input', checkExecuteInput);
+                cmdInput.addEventListener('input', checkExecuteInput);
+                checkExecuteInput(); // 初始化狀態
+            }
+            checkDirty(); // 初始化狀態
+        }
+
+        if (typeof checkDirty === 'undefined') {
+            window.checkDirty = function () {
+                let isDirty = false;
+                document.querySelectorAll('.check-dirty').forEach(el => {
+                    const initial = el.dataset.initial;
+                    let current;
+
+                    if (el.type === 'checkbox') {
+                        const initialBool = (initial === 'true');
+                        current = el.checked;
+                        if (current !== initialBool) {
+                            isDirty = true;
+                        }
+                    } else {
+                        current = el.value;
+                        if (current !== initial) {
+                            isDirty = true;
+                        }
+                    }
+                });
+                const saveBtn = document.getElementById('saveBtn');
+                if (saveBtn) saveBtn.disabled = !isDirty;
+            };
+        }
+
+        if (typeof checkExecuteInput === 'undefined') {
+            window.checkExecuteInput = function () {
+                const commandInput = document.getElementById('command');
+                const executeBtn = document.getElementById('executeBtn');
+                if (commandInput && executeBtn) {
+                    executeBtn.disabled = !commandInput.value.trim();
+                }
+            };
+        }
+
+        // 執行初始化
+        initDirtyCheck();
+
+        // HTMX 請求事件監聽器
+        (() => {
+            const execForm = document.getElementById('workspaceExecuteForm');
+            if (execForm) {
+                execForm.addEventListener('htmx:afterRequest', (event) => {
+                    if (!event.detail.successful) {
+                        return;
+                    }
+                    if (document.getElementById('history-tab')?.classList.contains('active')) {
+                        historyTabRefresh.refreshHistoryTab();
+
+                        const cmdInput = document.getElementById('command');
+                        if (cmdInput) {
+                            cmdInput.value = '';
+                            checkExecuteInput(); // 重新禁用按鈕
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+</div>

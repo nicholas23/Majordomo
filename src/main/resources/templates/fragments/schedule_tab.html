@@ -1,0 +1,67 @@
+<div xmlns:th="http://www.thymeleaf.org" class="d-flex h-100" style="min-height: 500px;">
+    <!-- Left: Schedule List -->
+    <div class="border-end border-secondary d-flex flex-column" style="width: 320px; flex-shrink: 0;">
+        <div
+            class="p-3 border-bottom border-secondary bg-dark-subtle d-flex justify-content-between align-items-center">
+            <span class="fw-semibold small text-secondary text-uppercase" style="letter-spacing: 0.05em;">排程列表</span>
+            <button class="btn btn-sm btn-primary d-flex align-items-center gap-1"
+                th:attr="hx-get='/web/schedule/0/edit?workspaceId=' + ${workspaceId}" hx-target='#schedule-editor'>
+                <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                新增
+            </button>
+        </div>
+
+        <div class="overflow-y-auto flex-grow-1 bg-dark"
+            style="scrollbar-width: thin; scrollbar-color: #495057 #212529;">
+            <div th:each="s : ${schedules}"
+                class="schedule-item p-3 border-bottom border-secondary-subtle text-white transition-colors group"
+                th:attr="hx-get='/web/schedule/' + ${s.id} + '/edit?workspaceId=' + ${workspaceId}"
+                hx-target='#schedule-editor'
+                onclick="document.querySelectorAll('.schedule-item').forEach(el => { el.classList.remove('bg-secondary'); el.classList.add('bg-dark'); }); this.classList.remove('bg-dark'); this.classList.add('bg-secondary');"
+                style="cursor: pointer;" th:classappend="'bg-dark'">
+
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge" th:classappend="${s.enabled ? 'text-bg-success' : 'text-bg-secondary'}"
+                                th:text="${s.type}">Type</span>
+                            <span class="small text-secondary font-monospace"
+                                th:text="${s.cron != null ? s.cron : #temporals.format(s.startTime, 'yyyy-MM-dd HH:mm')}">Cron/Time</span>
+                        </div>
+                        <div class="small fw-medium text-white text-truncate font-monospace" th:text="${s.command}">
+                            Command</div>
+                    </div>
+
+                    <!-- Toggle Button -->
+                    <button type="button" class="btn btn-sm ms-2"
+                        th:classappend="${s.enabled ? 'btn-outline-danger' : 'btn-outline-success'}"
+                        th:attr="hx-put='/web/schedule/' + ${s.id} + '/toggle?enabled=' + ${!s.enabled} + '&workspaceId=' + ${workspaceId}"
+                        hx-target='#tab-content' title="切換排程狀態" style="padding: 0.25rem 0.5rem;"
+                        onclick="event.stopPropagation();">
+                        <i th:if="${s.enabled}" data-lucide="pause" style="width: 14px; height: 14px;"></i>
+                        <i th:unless="${s.enabled}" data-lucide="play" style="width: 14px; height: 14px;"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Empty State -->
+            <div th:if="${schedules.size() == 0}" class="p-5 text-center text-secondary small">
+                尚無排程任務
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Schedule Editor -->
+    <div class="flex-grow-1 d-flex flex-column h-100 overflow-hidden bg-dark" id="schedule-editor">
+        <div
+            class="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center p-5 text-secondary">
+            <div class="mb-4 p-4 bg-dark-subtle rounded-circle">
+                <i data-lucide="calendar-clock" class="text-secondary" style="width: 2rem; height: 2rem;"></i>
+            </div>
+            <p>請從左側選擇排程進行編輯或點擊「新增」</p>
+        </div>
+
+        <script>
+            lucide.createIcons();
+        </script>
+    </div>
+</div>

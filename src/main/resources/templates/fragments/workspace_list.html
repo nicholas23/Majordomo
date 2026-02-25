@@ -1,0 +1,27 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="list" class="list-group list-group-flush px-2">
+    <div th:each="ws : ${workspaces}"
+        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between bg-transparent text-white border-0 rounded-2 mb-1"
+        th:classappend="${ws.active} ? 'active' : ''" th:hx-get="@{/web/workspace/{id}(id=${ws.id})}"
+        hx-target="#workspace-display" hx-swap="innerHTML transition:true" style="cursor: pointer;">
+
+        <div class="d-flex align-items-center gap-2 overflow-hidden" style="min-width: 0;">
+            <i data-lucide="folder" class="flex-shrink-0" style="width: 16px; height: 16px;"></i>
+            <span class="fs-6 fw-medium text-truncate" th:text="${ws.name}">工作區名稱</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <div class="rounded-circle" th:classappend="${ws.active} ? 'bg-success' : 'bg-secondary'" title="狀態"
+                style="width: 8px; height: 8px;"></div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${workspaces.size() == 0}" class="text-center p-3 text-secondary small">
+        尚無工作區
+    </div>
+
+    <!-- Re-init icons for new content -->
+    <script>
+        lucide.createIcons();
+    </script>
+</div>

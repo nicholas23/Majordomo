@@ -1,0 +1,97 @@
+<div xmlns:th="http://www.thymeleaf.org"
+    class="h-100 d-flex flex-column bg-dark text-white border-start border-secondary" style="border-radius: 0;">
+    <div class="p-4 p-md-4 border-bottom border-secondary">
+        <h3 class="fs-5 fw-bold m-0 d-flex align-items-center gap-2">
+            <i data-lucide="edit-3" class="text-primary" style="width: 20px; height: 20px;"></i>
+            <span th:text="${schedule.id == 0 ? '新增排程任務' : '編輯排程任務'}">排程編輯</span>
+        </h3>
+    </div>
+
+    <div class="flex-grow-1 overflow-y-auto p-4 p-md-4"
+        style="scrollbar-width: thin; scrollbar-color: #495057 #212529;">
+        <form class="d-flex flex-column" th:action="@{'/web/workspace/' + ${schedule.workspaceId} + '/schedule'}"
+            method="post" th:attr="hx-post='/web/workspace/' + ${schedule.workspaceId} + '/schedule'"
+            hx-target='#tab-content'>
+            <!-- 目標為分頁內容以重新載入列表 -->
+
+            <!-- 隱藏欄位 -->
+            <input type="hidden" name="id" th:value="${schedule.id}">
+            <input type="hidden" name="workspaceId" th:value="${schedule.workspaceId}">
+
+            <div class="mb-3">
+                <label class="form-label">指令內容</label>
+                <textarea class="form-control bg-dark text-white border-secondary font-monospace small" name="command"
+                    rows="3" th:text="${schedule.command}" placeholder="輸入要執行的 Gemini 指令..." required></textarea>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">排程類型</label>
+                    <select class="form-select bg-dark text-white border-secondary" name="type"
+                        onchange="toggleScheduleFields(this.value)">
+                        <option th:each="t : ${types}" th:value="${t}" th:text="${t}"
+                            th:selected="${t == schedule.type}">
+                            Type</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6 d-flex flex-column">
+                    <label class="form-label">啟用狀態</label>
+                    <div class="d-flex align-items-center gap-2 mt-auto mb-2">
+                        <div>
+                            <div class="form-check form-switch m-0 fs-5">
+                                <input class="form-check-input check-dirty" type="checkbox" role="switch" name="enabled"
+                                    value="true" th:checked="${schedule.enabled}" style="cursor: pointer;">
+                            </div>
+                        </div>
+                        <span class="small text-white">啟用此排程</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3" id="cron-field" th:style="${schedule.type?.name() == 'CRON_JOB'} ? '' : 'display:none'">
+                <label class="form-label">Cron 表達式</label>
+                <input type="text" class="form-control bg-dark text-body border-secondary font-monospace" name="cron"
+                    th:value="${schedule.cron}" placeholder="0 0 * * * ?">
+                <div class="form-text text-secondary mt-1">例如：<code>0 0 12 * * ?</code> (每天中午 12 點)</div>
+            </div>
+
+            <div class="mb-3" id="time-field" th:style="${schedule.type?.name() == 'ONE_TIME'} ? '' : 'display:none'">
+                <label class="form-label">執行時間</label>
+                <!-- NOTE: color-scheme: dark ensures date picker icon appears correctly in dark theme browsers, though Bootstrap does not force the calendar UI theme directly, this helps native forms -->
+                <input type="datetime-local" class="form-control bg-dark text-body border-secondary" name="startTime"
+                    th:value="${schedule.startTime}" style="color-scheme: dark;">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3 pt-4 border-top border-secondary">
+                <button type="button" class="btn btn-outline-secondary"
+                    th:attr="hx-get='/web/schedule/0/edit?workspaceId=' + ${workspaceId}"
+                    hx-target='#schedule-editor'>重置</button>
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
+                    <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                    儲存排程
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function toggleScheduleFields(type) {
+            const cronField = document.getElementById('cron-field');
+            const timeField = document.getElementById('time-field');
+
+            if (type === 'CRON_JOB') {
+                cronField.style.display = 'block';
+                timeField.style.display = 'none';
+            } else if (type === 'ONE_TIME') {
+                cronField.style.display = 'none';
+                timeField.style.display = 'block';
+            } else {
+                cronField.style.display = 'none';
+                timeField.style.display = 'none';
+            }
+        }
+    </script>
+</div>

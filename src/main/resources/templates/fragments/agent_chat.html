@@ -1,0 +1,112 @@
+<div xmlns:th="http://www.thymeleaf.org" class="d-flex flex-column h-100">
+    <!-- Chat Header -->
+    <div class="px-4 py-3 border-bottom border-secondary-subtle flex-shrink-0">
+        <h2 class="fs-5 fw-semibold d-flex align-items-center gap-2 m-0 text-body">
+            <i data-lucide="bot" class="text-primary" style="width: 1.5rem; height: 1.5rem;"></i>
+            <span th:text="${agentName}"></span>
+        </h2>
+    </div>
+
+    <!-- Chat Messages Area -->
+    <div id="chat-messages" class="flex-grow-1 p-4 overflow-y-auto d-flex flex-column gap-3 bg-dark text-body"
+        style="padding-bottom: 2rem;">
+
+        <!-- Empty State -->
+        <div th:if="${recentChats.size() == 0}" class="text-center p-5 text-secondary">
+            <i data-lucide="message-square" class="mx-auto mb-4 text-secondary" style="width: 3rem; height: 3rem;"></i>
+            <p>目前沒有對話紀錄。發送訊息開始與 Agent 聊天吧！</p>
+        </div>
+
+        <!-- Message Bubbles -->
+        <div th:each="chat : ${recentChats}" class="d-flex w-100"
+            th:classappend="${chat.role == 'USER' ? 'justify-content-end' : 'justify-content-start'}">
+
+            <!-- Agent Avatar -->
+            <div th:if="${chat.role != 'USER'}" class="flex-shrink-0 me-3 mt-4">
+                <div class="rounded-circle bg-dark-subtle text-primary border border-secondary-subtle d-flex align-items-center justify-content-center shadow-sm"
+                    style="width: 2rem; height: 2rem;">
+                    <i data-lucide="bot" style="width: 1rem; height: 1rem;"></i>
+                </div>
+            </div>
+
+            <!-- Message Content -->
+            <div class="d-flex flex-column" style="max-width: 75%;">
+                <div class="small text-secondary mb-1 px-1 fw-medium"
+                    th:text="${chat.role == 'USER' ? userName : agentName}"
+                    th:classappend="${chat.role == 'USER' ? 'text-end' : 'text-start'}">
+                </div>
+
+                <div class="px-3 py-2 shadow-sm text-wrap lh-base" style="white-space: pre-wrap;"
+                    th:classappend="${chat.role == 'USER' ? 'bg-primary text-white border border-primary rounded-4 rounded-top-end-0 ms-auto' : 'bg-dark-subtle border border-secondary text-body rounded-4 rounded-top-start-0'}"
+                    th:text="${chat.message}">
+                </div>
+
+                <div class="small text-secondary mt-1 px-1 d-flex align-items-center gap-1"
+                    th:classappend="${chat.role == 'USER' ? 'justify-content-end' : 'justify-content-start'}"
+                    style="font-size: 0.7rem;">
+                    <i th:data-lucide="${chat.source == 'TELEGRAM' ? 'smartphone' : 'monitor'}"
+                        style="width: 0.75rem; height: 0.75rem;"></i>
+                    <span th:text="${#temporals.format(chat.createAt, 'MM-dd HH:mm')}"></span>
+                </div>
+            </div>
+
+            <!-- User Avatar -->
+            <div th:if="${chat.role == 'USER'}" class="flex-shrink-0 ms-3 mt-4">
+                <div class="rounded-circle bg-dark-subtle text-secondary border border-secondary-subtle d-flex align-items-center justify-content-center shadow-sm"
+                    style="width: 2rem; height: 2rem;">
+                    <i data-lucide="user" style="width: 1rem; height: 1rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-3 border-top border-secondary-subtle bg-dark-subtle flex-shrink-0">
+        <form hx-post="/web/agent/chat/send" hx-target="#workspace-display" hx-indicator="#chat-submit-indicator"
+            class="d-flex gap-2 position-relative">
+
+            <textarea name="message" class="form-control bg-dark border-secondary text-white" rows="2"
+                placeholder="輸入訊息..." required
+                style="resize: none; border-radius: 1.25rem; padding: 0.75rem 3rem 0.75rem 1rem;"></textarea>
+
+            <button type="submit" id="chat-submit-btn"
+                class="btn btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center position-absolute"
+                style="width: 2.5rem; height: 2.5rem; right: 0.75rem; bottom: 0.75rem;" title="發送">
+                <i data-lucide="send" id="chat-submit-icon" style="width: 1rem; height: 1rem;"></i>
+                <div class="spinner-border spinner-border-sm text-white htmx-indicator" id="chat-submit-indicator"
+                    role="status" style="display: none;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Auto-scroll to bottom
+        setTimeout(() => {
+            const chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }, 50);
+
+        // Submit on Enter (Shift+Enter for new line)
+        document.querySelector('textarea[name="message"]').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('chat-submit-btn').click();
+            }
+        });
+
+        // Show indicator logic for nested elements manually since standard HTMX indicator might hide the icon
+        document.body.addEventListener('htmx:beforeRequest', function (evt) {
+            if (evt.target.getAttribute('hx-post') === '/web/agent/chat/send') {
+                document.getElementById('chat-submit-icon').style.display = 'none';
+                document.getElementById('chat-submit-indicator').style.display = 'block';
+            }
+        });
+        // Note: afterRequest is not needed if the whole element is swapped by HTMX response
+    </script>
+</div>

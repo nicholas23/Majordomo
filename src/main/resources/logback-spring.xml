@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 覆寫 Console 的 Log Pattern，去掉日期部分保留時間 -->
+    <property name="CONSOLE_LOG_PATTERN" value="%clr(%d{HH:mm:ss}){faint} %clr(${LOG_LEVEL_PATTERN:-%1p}) %clr([%5.5t]){faint} %clr(%-40.40logger{20}){cyan} %clr(:){faint} %m%n" />
+
+    <!-- 引入 Spring Boot 預設的日誌設定 (包含顏色與格式) -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+
+    <!-- 設定日誌存放的目錄為執行目錄下的 logs 資料夾 -->
+    <property name="LOG_DIR" value="./logs" />
+    <property name="LOG_FILE" value="${LOG_DIR}/application.log" />
+
+    <!-- 定義每天分檔的 File Appender -->
+    <appender name="DAILY_ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        
+        <!-- 使用時間與大小為基礎的滾動策略 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 每天的檔名格式，加上 %i 以區分每天之內的檔案 -->
+            <fileNamePattern>${LOG_DIR}/application-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 單一檔案大小上限為 10MB -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- 保留過去 30 天的日誌 -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 將定義好的 Appender 套用到 Root Logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="DAILY_ROLLING_FILE" />
+    </root>
+
+</configuration>

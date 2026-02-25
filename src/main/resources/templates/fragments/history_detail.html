@@ -1,0 +1,67 @@
+<div xmlns:th="http://www.thymeleaf.org" th:if="${history != null}" class="d-flex flex-column h-100 bg-dark text-white">
+    <div class="p-4 p-md-5 border-bottom border-secondary">
+        <h3 class="fs-5 fw-bold mb-4 d-flex align-items-center gap-2">
+            <i data-lucide="activity" class="text-primary" style="width: 20px; height: 20px;"></i>
+            執行詳情
+        </h3>
+        <div class="row g-3 small">
+            <div class="col-12 col-md-4">
+                <div class="p-3 bg-dark-subtle rounded-3 border border-secondary h-100">
+                    <div class="text-secondary small text-uppercase mb-1" style="font-size: 0.75rem;">狀態</div>
+                    <span class="badge"
+                        th:classappend="${history.status?.name() == 'RUNNING' ? 'text-bg-primary' :
+                                           history.status?.name() == 'COMPLETED' ? 'text-bg-success' :
+                                           history.status?.name() == 'FAILED' ? 'text-bg-danger' :
+                                           history.status?.name() == 'TERMINATED' ? 'text-bg-warning' : 'text-bg-secondary'}"
+                        th:text="${history.status != null ? history.status.name() : 'UNKNOWN'}">Status</span>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4">
+                <div class="p-3 bg-dark-subtle rounded-3 border border-secondary h-100">
+                    <div class="text-secondary small text-uppercase mb-1" style="font-size: 0.75rem;">開始時間</div>
+                    <div class="fw-medium" th:text="${#temporals.format(history.startTime, 'yyyy-MM-dd HH:mm:ss')}">
+                        Start
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="p-3 bg-dark-subtle rounded-3 border border-secondary h-100">
+                    <div class="text-secondary small text-uppercase mb-1" style="font-size: 0.75rem;">結束時間</div>
+                    <div class="fw-medium"
+                        th:text="${history.endTime != null ? #temporals.format(history.endTime, 'yyyy-MM-dd HH:mm:ss') : '—'}">
+                        End</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="flex-grow-1 overflow-y-auto p-4 p-md-5 d-flex flex-column gap-4"
+        style="scrollbar-width: thin; scrollbar-color: #495057 #212529;">
+        <div>
+            <h4 class="small fw-bold mb-2 text-white">指令</h4>
+            <pre class="p-3 bg-black text-light rounded-3 border border-secondary overflow-auto font-monospace small m-0"
+                style="white-space: pre-wrap;" th:text="${history.command}">
+                無輸出...
+            </pre>
+        </div>
+        <div>
+            <h4 class="small fw-bold mb-2 text-white">Stdout:</h4>
+            <pre class="p-3 bg-black text-light rounded-3 border border-secondary overflow-auto font-monospace small m-0"
+                style="white-space: pre-wrap;" th:text="${outputContent}">
+                無輸出...
+            </pre>
+        </div>
+
+        <div th:if="${errorContent != null and !errorContent.isEmpty()}">
+            <h4 class="small fw-bold mb-2 text-danger">Stderr:</h4>
+            <pre class="p-3 bg-dark text-danger rounded-3 border border-danger overflow-auto font-monospace small m-0"
+                style="white-space: pre-wrap;" th:text="${errorContent}">
+                無錯誤...
+            </pre>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</div>

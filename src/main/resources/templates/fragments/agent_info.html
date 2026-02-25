@@ -1,0 +1,51 @@
+<!-- Agent 資訊主頁面（僅展示，不提供網頁對話） -->
+<div class="flex-column h-100 p-4 p-md-5 overflow-y-auto bg-dark">
+
+    <!-- Top Section: Agent Properties (Bootstrap Card) -->
+    <div class="card text-bg-dark border-secondary mb-4 shadow-sm">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3 mb-4 border-bottom border-secondary-subtle pb-3">
+                <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center flex-shrink-0"
+                    style="width: 2.5rem; height: 2.5rem;">
+                    <i data-lucide="bot" style="width: 1.25rem; height: 1.25rem;"></i>
+                </div>
+                <div>
+                    <h3 class="fs-5 fw-semibold m-0 text-primary" th:text="${agentName}">Agent Name</h3>
+                    <span class="small text-secondary d-flex align-items-center gap-1 mt-1">
+                        <span class="rounded-circle bg-success d-inline-block"
+                            style="width: 0.5rem; height: 0.5rem;"></span> 已啟用
+                    </span>
+                </div>
+            </div>
+
+            <div class="row g-3 small">
+                <div class="col-6">
+                    <span class="text-secondary d-block" style="font-size: 0.75rem;">主人名稱</span>
+                    <span class="text-body fw-medium" th:text="${userName}"></span>
+                </div>
+                <div class="col-6">
+                    <span class="text-secondary d-block" style="font-size: 0.75rem;">時區</span>
+                    <span class="text-body fw-medium" th:text="${timezone}"></span>
+                </div>
+                <div class="col-12">
+                    <span class="text-secondary d-block" style="font-size: 0.75rem;">回覆風格</span>
+                    <span class="text-body fw-medium fst-italic" th:text="${responseStyle}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Section: HEARTBEAT.md Content -->
+    <div class="flex-grow-1 d-flex flex-column min-h-0">
+        <div class="d-flex align-items-center gap-2 mb-2 px-1">
+            <i data-lucide="activity" class="text-secondary" style="width: 1rem; height: 1rem;"></i>
+            <h4 class="fs-6 fw-semibold m-0 text-secondary">HEARTBEAT.md 狀態</h4>
+        </div>
+        <div class="card text-bg-dark border-secondary flex-grow-1 overflow-hidden shadow-sm">
+            <div class="card-body p-4 overflow-y-auto">
+                <pre class="m-0 small text-body font-monospace" style="white-space: pre-wrap; word-break: break-word;"
+                    th:text="${heartbeatContent}"></pre>
+            </div>
+        </div>
+    </div>
+</div>

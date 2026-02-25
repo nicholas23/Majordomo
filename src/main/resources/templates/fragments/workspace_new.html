@@ -1,0 +1,49 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <form class="card text-bg-dark border-secondary shadow-sm" id="newWorkspaceForm" th:action="@{/web/workspace}"
+        method="post" hx-post="/web/workspace" hx-target="#workspace-display" hx-swap="innerHTML transition:true">
+
+        <div class="card-header border-secondary-subtle py-3">
+            <h2 class="card-title fs-5 fw-semibold m-0 d-flex align-items-center gap-2">
+                <i data-lucide="plus-circle" class="text-primary" style="width: 20px; height: 20px;"></i>
+                建立新工作區
+            </h2>
+        </div>
+
+        <div class="card-body p-4">
+            <!-- Name Field -->
+            <div class="mb-3">
+                <label for="name" class="form-label">名稱</label>
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="name" name="name"
+                    placeholder="我的專案" required>
+            </div>
+
+            <!-- Path Field -->
+            <div class="mb-3">
+                <label for="absolutePath" class="form-label">絕對路徑</label>
+                <input type="text" class="form-control bg-dark text-white border-secondary" id="absolutePath"
+                    name="absolutePath" placeholder="/Users/username/projects/my-project" required>
+                <div class="form-text text-secondary small mt-1">伺服器上專案目錄的完整絕對路徑。</div>
+            </div>
+
+            <!-- Description Field -->
+            <div class="mb-4">
+                <label for="description" class="form-label">描述</label>
+                <textarea class="form-control bg-dark text-white border-secondary" id="description" name="description"
+                    rows="3" placeholder="專案描述..."></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top border-secondary-subtle">
+                <button type="button" class="btn btn-outline-secondary" hx-get="/web/workspace/list"
+                    hx-target="#workspace-display">取消</button>
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
+                    <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                    建立工作區
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</div>

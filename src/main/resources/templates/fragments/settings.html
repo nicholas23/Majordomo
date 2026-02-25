@@ -1,0 +1,65 @@
+<!-- Settings Page Fragment -->
+<div th:fragment="settings" class="p-4 p-md-5">
+    <div class="mb-5 border-bottom border-secondary pb-4">
+        <h2 class="fs-3 fw-bold mb-2">系統設定</h2>
+        <p class="text-secondary small m-0">管理 Telegram Bot 連線與其他系統設定。</p>
+    </div>
+
+    <!-- 儲存成功提示 -->
+    <div th:if="${saved}" class="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
+        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+        <div>Telegram 設定已儲存並已重新連線。</div>
+    </div>
+
+    <!-- Telegram 設定區塊 -->
+    <div class="card text-bg-dark border-secondary shadow-sm">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width: 48px; height: 48px; background: linear-gradient(135deg, #0088cc, #229ED9);">
+                    <i data-lucide="send" class="text-white" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div>
+                    <h3 class="fw-semibold fs-5 m-0 text-body">Telegram Bot</h3>
+                    <p class="text-secondary small m-0 mt-1" th:text="${telegramConfigured} ? '已設定 ✓' : '尚未設定'"></p>
+                </div>
+            </div>
+
+            <form hx-post="/web/settings/telegram" hx-target="#workspace-display" hx-swap="innerHTML transition:true">
+                <div class="mb-4">
+                    <label class="form-label" for="botToken">Bot Token</label>
+                    <input type="password" class="form-control bg-dark text-white border-secondary font-monospace"
+                        id="botToken" name="botToken"
+                        th:placeholder="${telegramConfigured} ? ${maskedBotToken} : '輸入你的 Bot Token'"
+                        th:value="${telegramConfigured} ? ${maskedBotToken} : ''" required autocomplete="off">
+                    <div class="form-text text-secondary mt-2">
+                        從 <a href="https://t.me/BotFather" target="_blank"
+                            class="text-primary text-decoration-none">@BotFather</a> 取得。
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="allowedUser">Allowed User ID</label>
+                    <input type="text" class="form-control bg-dark text-white border-secondary font-monospace"
+                        id="allowedUser" name="allowedUser" th:value="${allowedUser}"
+                        placeholder="輸入你的 Telegram User ID" required>
+                    <div class="form-text text-secondary mt-2">
+                        發送 <code>/start</code> 給 <a href="https://t.me/userinfobot" target="_blank"
+                            class="text-primary text-decoration-none">@userinfobot</a> 取得你的 User ID。
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center mt-5 pt-4 border-top border-secondary-subtle">
+                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
+                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                        儲存設定
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</div>
