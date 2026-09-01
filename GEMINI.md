@@ -7,7 +7,7 @@
 Majordomo 是一個基於 Spring Boot 的數位管家 / 管家系統，透過 `gemini` CLI 工具自動化管理與執行位於不同檔案目錄下的任務（Workspaces）。
 
 - **核心目標**：提供 Web 與 Telegram 介面，讓使用者遠端操控 AI Agent。Majordomo 旨在成為協助使用者打理工作環境、適應使用者習慣的貼心夥伴，而不僅僅是冷冰冰的管理工具。
-- **參考專案**：`agent` 模組參考了 [zeroClow](https://github.com/chaoshen/zeroClow) 專案設計，實作了具備自主決策能力的代理人。
+- **參考專案**：`agent` 模組參考了 [zeroclaw](https://github.com/zeroclaw-labs/zeroclaw)  專案設計，實作了具備自主決策能力的代理人。
 
 ## 2. 技術棧與環境規範
 

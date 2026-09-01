@@ -7,7 +7,7 @@ Majordomo 不只是工具——她是你的數位管家。她學習你的偏好�
 ## ✨ 核心功能
 
 ### 🤖 BasicAgent（Majordomo 核心）
-- 參考 [zeroClow](https://github.com/chaoshen/zeroClow) 設計的自主決策 AI Agent
+- 參考 [zeroclaw](https://github.com/zeroclaw-labs/zeroclaw) 設計的自主決策 AI Agent
 - **心跳機制 (Heartbeat)**：定期巡視未讀任務與排程歷史，主動回報結果
 - **長期記憶 (Memory)**：基於關鍵字的持久化記憶系統，學習使用者偏好
 - **對話介面**：透過 Web Chat 或 Telegram 與使用者自然對話
