@@ -166,14 +166,11 @@ public class WorkspaceWebController {
             @RequestParam String description,
             @RequestParam String absolutePath,
             @RequestParam(defaultValue = "false") boolean active,
-            @RequestParam(defaultValue = "false") boolean activeToTelegram,
             Model model) {
 
-        log.info("[WorkspaceWebController] 更新 Workspace: id={}, name={}, active={}, telegram={}", id, name, active,
-                activeToTelegram);
+        log.info("[WorkspaceWebController] 更新 Workspace: id={}, name={}, active={}", id, name, active);
 
-        // 需更新 Service 介面以支援 active 參數
-        workspaceService.updateWorkspace(id, name, description, absolutePath, active, activeToTelegram);
+        workspaceService.updateWorkspace(id, name, description, absolutePath, active);
 
         // 更新後重新載入詳情
         Workspace updated = workspaceService.getWorkspace(id);

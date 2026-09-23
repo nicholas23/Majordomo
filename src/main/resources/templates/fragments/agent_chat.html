@@ -58,6 +58,21 @@
                 </div>
             </div>
         </div>
+
+        <!-- Waiting Reply Indicator & Auto-Poll -->
+        <div th:if="${waitingReply}" class="d-flex w-100 justify-content-start"
+             hx-get="/web/agent/chat" hx-trigger="every 2s" hx-target="#workspace-display">
+            <div class="flex-shrink-0 me-3 mt-1">
+                <div class="rounded-circle bg-dark-subtle text-primary border border-secondary-subtle d-flex align-items-center justify-content-center shadow-sm"
+                    style="width: 2rem; height: 2rem;">
+                    <i data-lucide="bot" style="width: 1rem; height: 1rem;"></i>
+                </div>
+            </div>
+            <div class="px-3 py-2 bg-dark-subtle border border-secondary text-secondary rounded-4 rounded-top-start-0 d-flex align-items-center gap-2">
+                <div class="spinner-grow spinner-grow-sm text-primary" role="status"></div>
+                <span class="small" th:text="${agentName} + ' 正在處理與回覆中...'"></span>
+            </div>
+        </div>
     </div>
 
     <!-- Input Area -->

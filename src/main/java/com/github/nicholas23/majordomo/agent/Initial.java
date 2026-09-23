@@ -13,6 +13,7 @@ package com.github.nicholas23.majordomo.agent;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -28,6 +29,12 @@ public class Initial {
 
     private static final String BASE_DIR_NAME = ".majordomo";
     private static final String PROPERTIES_FILE = "agent.properties";
+
+    @Value("${majordomo.base-dir:}")
+    private String configuredBaseDir;
+
+    @Value("${majordomo.skip-agy-trust:${majordomo.skip-gemini-trust:false}}")
+    private boolean skipAgyTrust;
 
     // Properties keys
     private static final String KEY_NAME = "agent.name";
@@ -64,16 +71,16 @@ public class Initial {
             log.error("[Initial] 無法建立資料目錄: {}", dataDir, e);
             throw new RuntimeException("無法建立資料目錄: " + dataDir, e);
         }
-        Path geminiConfig = getBasePath().resolve(".gemini");
+        Path agyConfig = getBasePath().resolve(".agents");
         try {
-            Files.createDirectories(geminiConfig);
-            log.info("[Initial] 確認Gemini-Cli local settings 目錄存在: {}", geminiConfig);
+            Files.createDirectories(agyConfig);
+            log.info("[Initial] 確認 Antigravity CLI MCP 設定目錄存在: {}", agyConfig);
         } catch (IOException e) {
-            log.error("[Initial] 無法建立Gemini-Cli local settings 目錄: {}", geminiConfig, e);
-            throw new RuntimeException("無法建立Gemini-Cli local settings 目錄: " + geminiConfig, e);
+            log.error("[Initial] 無法建立 Antigravity CLI MCP 設定目錄: {}", agyConfig, e);
+            throw new RuntimeException("無法建立 Antigravity CLI MCP 設定目錄: " + agyConfig, e);
         }
-        setupMemoryMcpSettings(geminiConfig);
-        addBasicDirToGeminiTrustFolderSettings();
+        setupMemoryMcpSettings(agyConfig);
+        addBasicDirToAgyTrustSettings();
 
         if (isInitialized()) {
             Properties props = loadProperties();
@@ -82,6 +89,8 @@ public class Initial {
         }
     }
     
+    private static final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
     /**
      * 目的：將 BasicAgent 根目錄加入 Gemini CLI 的信任資料夾清單。
      * 輸入：無
@@ -89,35 +98,35 @@ public class Initial {
      * 限制：若 trustedFolders.json 不存在則跳過
      * 副作用：讀寫 ~/.gemini/trustedFolders.json
      */
-    private void addBasicDirToGeminiTrustFolderSettings() {
-        Path geminiUserDir = Path.of(System.getProperty("user.home"), ".gemini");
-        Path trustedFolders = geminiUserDir.resolve("trustedFolders.json");
-        if(Files.exists(trustedFolders)) {
-            try {
-                String content = Files.readString(trustedFolders);
-                org.json.JSONObject json = new org.json.JSONObject(content);
-                if (!json.has(getBasePath().toAbsolutePath().toString())) {
-                    json.put(getBasePath().toAbsolutePath().toString(),"TRUST_FOLDER");
-                    Files.writeString(trustedFolders, json.toString(4));
-                    log.info("[Initial] 已更新 Gemini-Cli trust 目錄設定: {}", trustedFolders);
-                } else {
-                    log.info("[Initial] Gemini-Cli trust 目錄設定已存在: {}", trustedFolders);
+    private void addBasicDirToAgyTrustSettings() {
+        if (skipAgyTrust) {
+            log.info("[Initial] 測試模式或已配置停用更新 agy Trust 目錄設定，略過");
+            return;
+        }
+        Path settingsFile = Path.of(System.getProperty("user.home"), ".gemini", "antigravity-cli", "settings.json");
+        try {
+            Files.createDirectories(settingsFile.getParent());
+            com.fasterxml.jackson.databind.node.ObjectNode json = objectMapper.createObjectNode();
+            if (Files.exists(settingsFile) && !Files.readString(settingsFile).isBlank()) {
+                json = (com.fasterxml.jackson.databind.node.ObjectNode) objectMapper.readTree(Files.readString(settingsFile));
+            }
+            com.fasterxml.jackson.databind.node.ArrayNode workspaces = json.withArray("trustedWorkspaces");
+            String basePathStr = getBasePath().toAbsolutePath().toString();
+            boolean exists = false;
+            for (com.fasterxml.jackson.databind.JsonNode workspace : workspaces) {
+                if (basePathStr.equals(workspace.asText())) {
+                    exists = true;
+                    break;
                 }
-            } catch (IOException e) {
-                log.error("[Initial] 無法讀取或更新 Gemini-Cli trust 目錄設定: {}", trustedFolders, e);
-                throw new RuntimeException("無法讀取或更新 Gemini-Cli trust 目錄設定: " + trustedFolders, e);
             }
-        }else {
-            log.info("[Initial] Gemini-Cli trust 目錄設定不存在: {}", trustedFolders);
-            try {
-                Files.createDirectories(geminiUserDir);
-                String content = "{\"" + getBasePath().toAbsolutePath().toString() + "\":\"TRUST_FOLDER\"}";
-                Files.writeString(trustedFolders, content);
-                log.info("[Initial] 已建立 Gemini-Cli trust 目錄設定: {}", trustedFolders);
-            } catch (IOException e) {
-                log.error("[Initial] 無法建立 Gemini-Cli trust 目錄設定: {}", trustedFolders, e);
-                throw new RuntimeException("無法建立 Gemini-Cli trust 目錄設定: " + trustedFolders, e);
+            if (!exists) {
+                workspaces.add(basePathStr);
+                objectMapper.writerWithDefaultPrettyPrinter().writeValue(settingsFile.toFile(), json);
+                log.info("[Initial] 已將工作區加入 agy trust 設定: {}", settingsFile);
             }
+        } catch (IOException e) {
+            log.error("[Initial] 無法讀取或更新 agy trust 設定: {}", settingsFile, e);
+            throw new RuntimeException("無法讀取或更新 agy trust 設定: " + settingsFile, e);
         }
     }
 
@@ -129,15 +138,15 @@ public class Initial {
      * 限制：若設定已存在則不覆蓋
      * 副作用：建立或更新 settings.json
      */
-    private void setupMemoryMcpSettings(Path geminiConfig) {
-        Path settingsFile = geminiConfig.resolve("settings.json");
+    private void setupMemoryMcpSettings(Path agyConfig) {
+        Path settingsFile = agyConfig.resolve("mcp_config.json");
         if (!Files.exists(settingsFile)) {
             // WHY: 這段 JSON 很短（6 行），不需要外移到模板檔案
             String content = """
                     {
                       "mcpServers": {
                         "memoryMcp": {
-                            "url": "http://localhost:8088/sse"
+                            "serverUrl": "http://localhost:8088/mcp"
                         }
                       }
                     }
@@ -151,17 +160,19 @@ public class Initial {
             }
         } else {
             //讀取原有設定，確認是否已包含 memoryMcp 設定，如果沒有則補上，避免覆蓋使用者原有的其他設定
-            // 使用 org.json 解析 JSON，因為它是輕量級的且不需要額外的依賴
             try {
                 String existingContent = Files.readString(settingsFile);
-                org.json.JSONObject json = new org.json.JSONObject(existingContent);
-                if (!json.has("mcpServers")) {
-                    json.put("mcpServers", new org.json.JSONObject());
+                com.fasterxml.jackson.databind.node.ObjectNode json = (com.fasterxml.jackson.databind.node.ObjectNode) objectMapper.readTree(existingContent);
+                com.fasterxml.jackson.databind.node.ObjectNode mcpServers;
+                if (!json.has("mcpServers") || !json.get("mcpServers").isObject()) {
+                    mcpServers = json.putObject("mcpServers");
+                } else {
+                    mcpServers = (com.fasterxml.jackson.databind.node.ObjectNode) json.get("mcpServers");
                 }
-                org.json.JSONObject mcpServers = json.getJSONObject("mcpServers");
                 if (!mcpServers.has("memoryMcp")) {
-                    mcpServers.put("memoryMcp", new org.json.JSONObject().put("url", "http://localhost:8088/sse"));
-                    Files.writeString(settingsFile, json.toString(4)); // 格式化輸出
+                    com.fasterxml.jackson.databind.node.ObjectNode memoryMcp = mcpServers.putObject("memoryMcp");
+                    memoryMcp.put("serverUrl", "http://localhost:8088/mcp");
+                    objectMapper.writerWithDefaultPrettyPrinter().writeValue(settingsFile.toFile(), json);
                     log.info("[Initial] 已更新 Gemini-Cli MCP 設定檔: {}", settingsFile);
                 } else {
                     log.info("[Initial] Gemini-Cli MCP 設定檔已包含 memoryMcp 設定: {}", settingsFile);
@@ -175,7 +186,11 @@ public class Initial {
 
     public Path getBasePath() {
         if (basePath == null) {
-            basePath = Path.of(System.getProperty("user.home"), BASE_DIR_NAME);
+            if (configuredBaseDir != null && !configuredBaseDir.isBlank()) {
+                basePath = Path.of(configuredBaseDir);
+            } else {
+                basePath = Path.of(System.getProperty("user.home"), BASE_DIR_NAME);
+            }
         }
         return basePath;
     }
@@ -320,7 +335,7 @@ public class Initial {
             ensureMemoryFile(base);
             Files.createDirectories(base.resolve("memory"));
             ensureHeartbeatFile(base);
-            ensureGeminiFile(base, name, user);
+            ensureAgentFile(base, name, user);
             log.info("[Initial] Agent 檔案檢查完成");
         } catch (IOException e) {
             log.error("[Initial] 確保 Agent 檔案失敗", e);
@@ -384,14 +399,14 @@ public class Initial {
         }
     }
 
-    private void ensureGeminiFile(Path base, String agentName, String username) throws IOException {
-        Path geminiMd = base.resolve("GEMINI.md");
-        if (!Files.exists(geminiMd)) {
-            String template = TemplateLoader.load(TEMPLATE_DIR + "gemini.md");
+    private void ensureAgentFile(Path base, String agentName, String username) throws IOException {
+        Path agentMd = base.resolve("AGENT.md");
+        if (!Files.exists(agentMd)) {
+            String template = TemplateLoader.load(TEMPLATE_DIR + "agent.md");
             String content = String.format(template,
                     agentName, agentName, base.toAbsolutePath(), agentName, username);
-            Files.writeString(geminiMd, content);
-            log.debug("[Initial] 補建 GEMINI.md");
+            Files.writeString(agentMd, content);
+            log.debug("[Initial] 補建 AGENT.md");
         }
     }
 }

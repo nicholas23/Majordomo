@@ -1,6 +1,6 @@
 # Majordomo 🧹 — 你的數位管家 / 管家系統
 
-> 基於 Spring Boot 的 AI 工作區管理系統，透過 Gemini CLI 自動化執行任務，並以 Web UI 與 Telegram Bot 提供遠端操控介面。
+> 基於 Spring Boot 的 AI 工作區管理系統，透過 Google Antigravity CLI (`agy`) 自動化執行任務，並以 Web UI 與 Telegram Bot 提供遠端操控介面。
 
 Majordomo 不只是工具——她是你的數位管家。她學習你的偏好、記住你的指示、主動巡視工作環境，並透過 Web 或 Telegram 隨時回應你的指令。
 
@@ -15,10 +15,10 @@ Majordomo 不只是工具——她是你的數位管家。她學習你的偏好�
 ### 📁 工作區管理 (Workspace)
 - 新增、編輯、軟刪除工作區目錄
 - 每個工作區獨立管理排程與執行歷史
-- 支援在指定工作目錄下呼叫 Gemini CLI 執行任務
+- 支援在指定工作目錄下呼叫 Antigravity CLI (`agy`) 執行任務
 
 ### 📊 執行與歷史 (Execution & History)
-- 同步/非同步執行 Gemini CLI 指令
+- 同步/非同步執行 `agy` 指令，並保留 JSON 結構化輸出
 - 完整記錄每次執行的指令、時間、狀態與輸出（stdout/stderr）
 - 支援 JSON 結構化解析 CLI 回應
 
@@ -49,14 +49,14 @@ Majordomo 內建 MCP Server，提供以下 Tool 供外部 AI 模型呼叫：
 | 前端 | Thymeleaf + HTMX + Bootstrap |
 | 排程 | Spring TaskScheduler（Virtual Threads） |
 | 機器人 | Telegram Bot API 9.4.0 |
-| CLI 工具 | Gemini CLI（系統層級呼叫） |
+| CLI 工具 | Google Antigravity CLI (`agy`，系統層級呼叫) |
 
 ## 🚀 快速開始
 
 ### 前置需求
 
 1. **Java 21+**
-2. **Gemini CLI**：必須在系統 PATH 中可執行 `gemini` 指令。應用程式啟動時會自動檢查。
+2. **Antigravity CLI**：必須在系統 PATH 中可執行 `agy` 指令。應用程式啟動時會自動檢查。
 3. **Maven 3.8+**
 
 ### 啟動應用程式
@@ -91,7 +91,7 @@ src/main/java/com/github/nicholas23/majordomo/
 ├── agent/        # BasicAgent 核心（Prompt、Heartbeat、初始化）
 ├── chat/         # Agent 對話紀錄持久化
 ├── config/       # 執行緒池、MCP 服務註冊
-├── exec/         # Gemini CLI 執行引擎
+├── exec/         # Antigravity CLI 執行引擎
 ├── history/      # 執行歷史與結果管理
 ├── mcp/          # MCP Tool 實作（Memory、Workspace、Telegram）
 ├── memory/       # Agent 長期記憶系統

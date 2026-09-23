@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.github.nicholas23.majordomo.schedule.Schedule;
-import com.github.nicholas23.majordomo.schedule.ScheduleRepository;
 import com.github.nicholas23.majordomo.schedule.ScheduleService;
 import com.github.nicholas23.majordomo.schedule.ScheduleType;
 
@@ -27,11 +26,9 @@ import com.github.nicholas23.majordomo.schedule.ScheduleType;
 public class ScheduleWebController {
     private static final Logger log = LoggerFactory.getLogger(ScheduleWebController.class);
 
-    private final ScheduleRepository scheduleRepository;
     private final ScheduleService scheduleService;
 
-    public ScheduleWebController(ScheduleRepository scheduleRepository, ScheduleService scheduleService) {
-        this.scheduleRepository = scheduleRepository;
+    public ScheduleWebController(ScheduleService scheduleService) {
         this.scheduleService = scheduleService;
     }
 
@@ -48,7 +45,7 @@ public class ScheduleWebController {
     public String getScheduleTab(@PathVariable Long id, Model model) {
         log.debug("[ScheduleWebController] 載入排程列表: workspaceId={}", id);
         model.addAttribute("workspaceId", id);
-        model.addAttribute("schedules", scheduleRepository.findByWorkspaceId(id));
+        model.addAttribute("schedules", scheduleService.listByWorkspaceId(id));
         return "fragments/schedule_tab";
     }
 
@@ -76,7 +73,7 @@ public class ScheduleWebController {
             newSchedule.setEnabled(true);
             model.addAttribute("schedule", newSchedule);
         } else {
-            scheduleRepository.findById(scheduleId).ifPresent(s -> model.addAttribute("schedule", s));
+            scheduleService.getSchedule(scheduleId).ifPresent(s -> model.addAttribute("schedule", s));
         }
         model.addAttribute("types", ScheduleType.values());
         return "fragments/schedule_editor";
@@ -100,11 +97,9 @@ public class ScheduleWebController {
 
         // WHY: 儲存後回傳更新的排程列表，供 HTMX 替換
         model.addAttribute("workspaceId", workspaceId);
-        model.addAttribute("schedules", scheduleRepository.findByWorkspaceId(workspaceId));
+        model.addAttribute("schedules", scheduleService.listByWorkspaceId(workspaceId));
         return "fragments/schedule_tab";
     }
-
-
 
     /**
      * 目的：切換排程的啟用/停用狀態。
@@ -126,7 +121,7 @@ public class ScheduleWebController {
         scheduleService.toggleEnabled(id, enabled);
 
         model.addAttribute("workspaceId", workspaceId);
-        model.addAttribute("schedules", scheduleRepository.findByWorkspaceId(workspaceId));
+        model.addAttribute("schedules", scheduleService.listByWorkspaceId(workspaceId));
         return "fragments/schedule_tab";
     }
 }

@@ -8,6 +8,7 @@
  */
 package com.github.nicholas23.majordomo.history;
 
+import com.github.nicholas23.majordomo.exec.AgyCliJsonOutputParser;
 import com.github.nicholas23.majordomo.exec.GeminiCliJsonOutputParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,9 +158,25 @@ public class HistoryService {
                     sb.append("指令: ").append(h.getCommand()).append("\n");
                     sb.append("狀態: ").append(h.getStatus().name()).append("\n");
                     String output = this.getResultContent(h.getId(), ResultTextType.STDOUT);
-                    if (StringUtils.hasText(output.trim())) {
-                        GeminiCliJsonOutputParser.GeminiCLiJsonResponse response = GeminiCliJsonOutputParser.parser(output);
-                        sb.append("Output: ").append(response.getResponse());
+                    if (StringUtils.hasText(output)) {
+                        String outputTrimmed = output.trim();
+                        AgyCliJsonOutputParser.AgyOutput response = AgyCliJsonOutputParser.parseOutput(outputTrimmed);
+                        if (response != null && StringUtils.hasText(response.getResponse())) {
+                            sb.append("Output: ").append(response.getResponse());
+                        } else if (response != null && StringUtils.hasText(response.getError())) {
+                            sb.append("Output (Error): ").append(response.getError());
+                        } else {
+                            // Existing histories may have been created before the agy migration.
+                            GeminiCliJsonOutputParser.GeminiCLiJsonResponse legacy = GeminiCliJsonOutputParser.parser(outputTrimmed);
+                            if (legacy.getError() != null && StringUtils.hasText(legacy.getError().getMessage())
+                                    && !legacy.getError().getMessage().startsWith("Failed to parse JSON:")) {
+                                sb.append("Output (Error): ").append(legacy.getError().getMessage());
+                            } else if (StringUtils.hasText(legacy.getResponse())) {
+                                sb.append("Output: ").append(legacy.getResponse());
+                            } else {
+                                sb.append("Output: ").append(outputTrimmed.length() > 500 ? outputTrimmed.substring(0, 500) + "..." : outputTrimmed);
+                            }
+                        }
                     } else {
                         sb.append("Output: (empty)");
                     }

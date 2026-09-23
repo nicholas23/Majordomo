@@ -18,6 +18,7 @@ public class AgentTodo {
     private long id;
     private String description;
     private LocalDateTime scheduledTime;
+    private String status = "PENDING";
     private LocalDateTime createdAt;
 
     public long getId() {
@@ -42,6 +43,14 @@ public class AgentTodo {
 
     public void setScheduledTime(LocalDateTime scheduledTime) {
         this.scheduledTime = scheduledTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {

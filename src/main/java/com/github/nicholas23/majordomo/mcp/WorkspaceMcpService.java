@@ -10,7 +10,7 @@
 package com.github.nicholas23.majordomo.mcp;
 
 import com.github.nicholas23.majordomo.exec.ExecuteService;
-import com.github.nicholas23.majordomo.exec.GeminiCliJsonOutputParser;
+import com.github.nicholas23.majordomo.exec.AgyCliJsonOutputParser;
 import com.github.nicholas23.majordomo.history.History;
 import com.github.nicholas23.majordomo.history.HistoryService;
 import com.github.nicholas23.majordomo.history.ResultTextType;
@@ -105,7 +105,7 @@ public class WorkspaceMcpService {
                     String outputStr = "[無結果]";
                     String raw = historyService.getResultContent(h.getId(), ResultTextType.STDOUT);
                     if (StringUtils.hasText(raw)) {
-                        GeminiCliJsonOutputParser.GeminiCLiJsonResponse parsed = GeminiCliJsonOutputParser.parser(raw);
+                        AgyCliJsonOutputParser.AgyOutput parsed = AgyCliJsonOutputParser.parseOutput(raw);
                         if (parsed != null && parsed.getResponse() != null) {
                             outputStr = parsed.getResponse();
                         } else {

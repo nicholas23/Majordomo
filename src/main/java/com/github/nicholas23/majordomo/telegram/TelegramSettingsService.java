@@ -46,6 +46,10 @@ public class TelegramSettingsService {
 
     private final Initial initialService;
 
+    // WHY: 加入記憶體快取，避免每次 Telegram Webhook/Update 都讀檔解密
+    private volatile String cachedBotToken;
+    private volatile String cachedAllowedUser;
+
     public TelegramSettingsService(Initial initialService) {
         this.initialService = initialService;
     }
@@ -83,6 +87,8 @@ public class TelegramSettingsService {
         Path propsFile = initialService.getBasePath().resolve(PROPS_FILE);
         try (var out = Files.newOutputStream(propsFile)) {
             props.store(out, "Telegram Settings (encrypted)");
+            this.cachedBotToken = botToken;
+            this.cachedAllowedUser = allowedUser;
             log.info("[TelegramSettingsService] 已儲存加密的 Telegram 設定: {}", propsFile);
         } catch (IOException e) {
             log.error("[TelegramSettingsService] 寫入設定檔失敗: {}", propsFile, e);
@@ -98,7 +104,12 @@ public class TelegramSettingsService {
      * 副作用：無
      */
     public String getBotToken() {
-        return getDecryptedValue(KEY_BOT_TOKEN);
+        if (cachedBotToken != null) {
+            return cachedBotToken;
+        }
+        String val = getDecryptedValue(KEY_BOT_TOKEN);
+        this.cachedBotToken = val;
+        return val;
     }
 
     /**
@@ -109,7 +120,20 @@ public class TelegramSettingsService {
      * 副作用：無
      */
     public String getAllowedUser() {
-        return getDecryptedValue(KEY_ALLOWED_USER);
+        if (cachedAllowedUser != null) {
+            return cachedAllowedUser;
+        }
+        String val = getDecryptedValue(KEY_ALLOWED_USER);
+        this.cachedAllowedUser = val;
+        return val;
+    }
+
+    /**
+     * 目的：清除設定快取
+     */
+    public void clearCache() {
+        this.cachedBotToken = null;
+        this.cachedAllowedUser = null;
     }
 
     /**

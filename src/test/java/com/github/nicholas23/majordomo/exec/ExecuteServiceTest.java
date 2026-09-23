@@ -28,6 +28,7 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * 目的：測試 ExecuteService 的核心邏輯。
@@ -80,6 +81,17 @@ public class ExecuteServiceTest {
     }
 
     @Test
+    void buildCommand_UsesAgyHeadlessJsonMode() {
+        ReflectionTestUtils.setField(executeService, "includeDirs", "/tmp/one, /tmp/two");
+
+        assertArrayEquals(new String[]{
+                        "agy", "--agent", "majordomo", "--output-format", "json", "--continue",
+                        "--dangerously-skip-permissions", "--add-dir", "/tmp/one", "--add-dir", "/tmp/two",
+                        "--prompt", "hello"},
+                executeService.buildCommand("hello", false));
+    }
+
+    @Test
     void testExecute_WhenExitValueNotZero_ReturnsFailed() throws Exception {
         History history = createTestHistory(50L);
 
@@ -97,6 +109,25 @@ public class ExecuteServiceTest {
         assertEquals(1, result.exitValue());
         assertEquals(HistoryStatus.FAILED, result.status());
         verify(historyService).updateHistoryStatus(eq(50L), eq(HistoryStatus.FAILED));
+    }
+
+    @Test
+    void testExecute_WhenAgyReportsJsonError_ReturnsFailedEvenWithZeroExitCode() throws Exception {
+        History history = createTestHistory(51L);
+        when(historyService.createHistory(anyLong(), anyString())).thenReturn(history);
+        when(historyService.getResultContent(51L, ResultTextType.STDOUT))
+                .thenReturn("{\"status\":\"ERROR\",\"error\":\"rate limited\"}");
+
+        Process mockProcess = mock(Process.class);
+        when(mockProcess.getInputStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
+        when(mockProcess.getErrorStream()).thenReturn(new ByteArrayInputStream(new byte[0]));
+        when(mockProcess.waitFor()).thenReturn(0);
+        when(commandExecutor.execute(any(), any())).thenReturn(mockProcess);
+
+        ExecuteService.ExecutionResult result = executeService.execute(1L, new File("/tmp"), "test", "test", true);
+
+        assertEquals(HistoryStatus.FAILED, result.status());
+        verify(historyService).updateHistoryStatus(51L, HistoryStatus.FAILED);
     }
 
     @Test

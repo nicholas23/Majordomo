@@ -52,9 +52,13 @@ public class AgentChatController {
         if (!initialService.isInitialized()) {
             return "fragments/agent_setup";
         }
+        var recentChats = agentChatService.getRecentChats();
+        boolean waitingReply = !recentChats.isEmpty() && "USER".equals(recentChats.get(recentChats.size() - 1).getRole());
+
         model.addAttribute("agentName", initialService.getAgentName());
         model.addAttribute("userName", initialService.getUserName());
-        model.addAttribute("recentChats", agentChatService.getRecentChats());
+        model.addAttribute("recentChats", recentChats);
+        model.addAttribute("waitingReply", waitingReply);
         return "fragments/agent_chat";
     }
 
@@ -70,7 +74,10 @@ public class AgentChatController {
     @PostMapping("/send")
     public String sendMessage(@RequestParam String message, Model model) {
         if (message == null || message.isBlank()) {
-            model.addAttribute("recentChats", agentChatService.getRecentChats());
+            var recentChats = agentChatService.getRecentChats();
+            boolean waitingReply = !recentChats.isEmpty() && "USER".equals(recentChats.get(recentChats.size() - 1).getRole());
+            model.addAttribute("recentChats", recentChats);
+            model.addAttribute("waitingReply", waitingReply);
             return "fragments/agent_chat";
         }
         // 儲存使用者訊息
@@ -89,7 +96,13 @@ public class AgentChatController {
             agentChatService.saveChat("AGENT", "⚠️ 尚未設定 Basic Agent，無法處理訊息。", "WEB");
         }
 
-        model.addAttribute("recentChats", agentChatService.getRecentChats());
+        var recentChats = agentChatService.getRecentChats();
+        boolean waitingReply = !recentChats.isEmpty() && "USER".equals(recentChats.get(recentChats.size() - 1).getRole());
+
+        model.addAttribute("agentName", initialService.getAgentName());
+        model.addAttribute("userName", initialService.getUserName());
+        model.addAttribute("recentChats", recentChats);
+        model.addAttribute("waitingReply", waitingReply);
         return "fragments/agent_chat";
     }
 }

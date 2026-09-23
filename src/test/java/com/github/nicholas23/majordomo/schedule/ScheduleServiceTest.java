@@ -142,6 +142,8 @@ public class ScheduleServiceTest {
         ws.setId(100L);
         when(workspaceService.getWorkspace(100L)).thenReturn(ws);
 
+        when(scheduleRepository.findById(id)).thenReturn(Optional.of(schedule));
+
         ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
         when(taskScheduler.schedule(runnableCaptor.capture(), any(Instant.class))).thenReturn((ScheduledFuture) mockFuture);
 
@@ -153,9 +155,38 @@ public class ScheduleServiceTest {
 
         // Assert
         verify(executeService).run(ws, "test command");
-        // 注意：這裡測試了 finally 區塊中的 activeFutures.remove(id)
+        assertFalse(schedule.isEnabled());
+        verify(scheduleRepository).save(schedule);
+
         // 雖然 activeFutures 是 private，但我們可以透過行為驗證後續能否解除註冊（若 entry 消失，unregister 將無效）
         scheduleService.unregisterSchedule(id);
         verifyNoMoreInteractions(mockFuture); // 因為 Map 中已無此 Future
+    }
+
+    @Test
+    void testListByWorkspaceId_ShouldCallRepository() {
+        // Arrange
+        when(scheduleRepository.findByWorkspaceId(10L)).thenReturn(java.util.Collections.emptyList());
+
+        // Act
+        scheduleService.listByWorkspaceId(10L);
+
+        // Assert
+        verify(scheduleRepository).findByWorkspaceId(10L);
+    }
+
+    @Test
+    void testGetSchedule_ShouldCallRepository() {
+        // Arrange
+        Schedule s = new Schedule();
+        s.setId(10L);
+        when(scheduleRepository.findById(10L)).thenReturn(Optional.of(s));
+
+        // Act
+        Optional<Schedule> result = scheduleService.getSchedule(10L);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(10L, result.get().getId());
     }
 }

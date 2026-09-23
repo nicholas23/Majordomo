@@ -206,6 +206,8 @@ public class TelegramHandleService {
      * 限制：若 Bot 未初始化則無法發送
      * 副作用：透過網路發送 Telegram 訊息
      */
+    private static final int MAX_TELEGRAM_MESSAGE_LENGTH = 4000;
+
     public void sendMessage(long chatId, String text) {
         // EDGE_CASE: Bot 可能未初始化（Token 未設定時）
         if (bot == null) {
@@ -213,13 +215,31 @@ public class TelegramHandleService {
             return;
         }
 
+        if (text == null || text.isBlank()) {
+            return;
+        }
+
         try {
-            SendMessage request = SendMessage.builder()
-                    .chatId(chatId)
-                    .text(text)
-                    .build();
-            bot.execute(request);
-            log.debug("[TelegramHandleService] 訊息已發送,Chat ID: {}", chatId);
+            if (text.length() <= MAX_TELEGRAM_MESSAGE_LENGTH) {
+                SendMessage request = SendMessage.builder()
+                        .chatId(chatId)
+                        .text(text)
+                        .build();
+                bot.execute(request);
+                log.debug("[TelegramHandleService] 訊息已發送,Chat ID: {}", chatId);
+            } else {
+                // WHY: Telegram 單一訊息上限為 4096 字元，超過時自動分段發送避免 400 Bad Request
+                for (int i = 0; i < text.length(); i += MAX_TELEGRAM_MESSAGE_LENGTH) {
+                    int end = Math.min(i + MAX_TELEGRAM_MESSAGE_LENGTH, text.length());
+                    String chunk = text.substring(i, end);
+                    SendMessage request = SendMessage.builder()
+                            .chatId(chatId)
+                            .text(chunk)
+                            .build();
+                    bot.execute(request);
+                }
+                log.debug("[TelegramHandleService] 長訊息已分段發送完成,Chat ID: {}, 總長度: {}", chatId, text.length());
+            }
         } catch (Exception e) {
             log.error("[TelegramHandleService] 發送訊息失敗: chatId={}", chatId, e);
         }
@@ -243,7 +263,7 @@ public class TelegramHandleService {
 
         long chatId;
         try {
-            chatId = Long.parseLong(allowedUser);
+            chatId = Long.parseLong(allowedUser.trim());
         } catch (NumberFormatException e) {
             log.warn("[TelegramHandleService] allowedUser 格式錯誤: {}", allowedUser);
             return;

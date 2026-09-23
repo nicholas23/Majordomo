@@ -69,13 +69,12 @@ public class WorkspaceService {
      * - description: String
      * - absolutePath: String
      * - active: boolean
-     * - activeToTelegram: boolean
      * 輸出：無
      * 限制：ID 需存在，且若更改路徑，新路徑必須是有效目錄
      * 副作用：更新資料庫
      */
     @Transactional
-    public void updateWorkspace(long id, String name, String description, String absolutePath, boolean active, boolean activeToTelegram) {
+    public void updateWorkspace(long id, String name, String description, String absolutePath, boolean active) {
         Workspace workspace = getWorkspace(id);
         
         // EDGE_CASE: 若路徑有變更，需重新驗證
@@ -89,7 +88,7 @@ public class WorkspaceService {
         workspace.setActive(active);
         workspace.setUpdateAt(LocalDateTime.now());
         workspaceRepository.save(workspace);
-        log.info("[WorkspaceService] 更新 Workspace: id={}, name={}, active={}, telegram={}", id, name, active, activeToTelegram);
+        log.info("[WorkspaceService] 更新 Workspace: id={}, name={}, active={}", id, name, active);
     }
 
     /**
@@ -167,7 +166,7 @@ public class WorkspaceService {
     }
 
     /**
-     * 目的：查詢所有已啟用 Telegram 通知的 Workspace。
+     * 目的：查詢所有啟用中的 Workspace。
      * 輸入：無
      * 輸出：List<Workspace>
      * 限制：無

@@ -146,4 +146,40 @@ public class WorkspaceServiceTest {
         verify(workspaceRepository).save(ws);
         assertNotNull(ws.getUpdateAt());
     }
+
+    @Test
+    void testUpdateWorkspace_ShouldUpdateFieldsAndSave() {
+        // Arrange
+        long id = 1L;
+        Workspace ws = new Workspace();
+        ws.setId(id);
+        ws.setName("Old Name");
+        ws.setDescription("Old Desc");
+        ws.setAbsolutePath(validPath);
+        ws.setActive(true);
+
+        when(workspaceRepository.findById(id)).thenReturn(Optional.of(ws));
+
+        // Act
+        workspaceService.updateWorkspace(id, "New Name", "New Desc", validPath, false);
+
+        // Assert
+        assertEquals("New Name", ws.getName());
+        assertEquals("New Desc", ws.getDescription());
+        assertFalse(ws.getActive());
+        assertNotNull(ws.getUpdateAt());
+        verify(workspaceRepository).save(ws);
+    }
+
+    @Test
+    void testListAllActive_ShouldCallRepository() {
+        // Arrange
+        when(workspaceRepository.findByActiveTrue()).thenReturn(Collections.emptyList());
+
+        // Act
+        workspaceService.listAllActive();
+
+        // Assert
+        verify(workspaceRepository).findByActiveTrue();
+    }
 }

@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.github.nicholas23.majordomo.exec.ExecuteService;
-import com.github.nicholas23.majordomo.exec.GeminiCliJsonOutputParser;
+import com.github.nicholas23.majordomo.exec.AgyCliJsonOutputParser;
 import com.github.nicholas23.majordomo.history.HistoryService;
 import com.github.nicholas23.majordomo.workspace.AgentCommandTask;
 import com.github.nicholas23.majordomo.workspace.AgentCommandTaskRepository;
@@ -70,7 +70,7 @@ public class HeartBeat {
         boolean isLongHeartbeat = (now.getMinute() < 5) && (now.getHour() % 2 == 0);
 
         List<AgentCommandTask> unreadTasks = agentCommandTaskRepository.findUnreadCompletedTasks();
-        List<AgentTodo> pendingTodos = agentTodoRepository.findTodosToTrigger(lastHeartBeatTime, now);
+        List<AgentTodo> pendingTodos = agentTodoRepository.findPendingTodosToTrigger(now);
 
         // 如果是短心跳，且沒有未讀任務也沒有到期的待辦事項，則跳過（節省 Token）
         if (!isLongHeartbeat && unreadTasks.isEmpty() && pendingTodos.isEmpty()) {
@@ -86,6 +86,11 @@ public class HeartBeat {
         }
         if (!pendingTodos.isEmpty()) {
             log.info("[HeartBeat] 找到 {} 筆到期的待辦事項，將注入給 Agent", pendingTodos.size());
+            // WHY: 注入前將狀態更新為 TRIGGERED，確保不會因滑動視窗偏差重複觸發或遺失
+            for (AgentTodo todo : pendingTodos) {
+                todo.setStatus("TRIGGERED");
+                agentTodoRepository.save(todo);
+            }
         }
 
         List<String> recentHistory = historyService.getWorkspaceHistories(lastHeartBeatTime);
@@ -157,13 +162,13 @@ public class HeartBeat {
                     historyService.getHistory(task.getHistoryId()).ifPresent(history -> {
                         String output = historyService.getResultContent(history.getId(), ResultTextType.STDOUT);
                         if (output != null && !output.isBlank()) {
-                            GeminiCliJsonOutputParser.GeminiCLiJsonResponse parsed = GeminiCliJsonOutputParser.parser(output);
+                            AgyCliJsonOutputParser.AgyOutput parsed = AgyCliJsonOutputParser.parseOutput(output);
                             if (parsed != null) {
                                 if (parsed.getResponse() != null && !parsed.getResponse().isBlank()) {
                                     prompt.append("執行結果 (Response):\n").append(parsed.getResponse()).append("\n");
                                 }
-                                if (parsed.getError() != null && parsed.getError().getMessage() != null) {
-                                    prompt.append("執行失敗 (Failed):\n").append(parsed.getError().getMessage()).append("\n");
+                                if (parsed.getError() != null && !parsed.getError().isBlank()) {
+                                    prompt.append("執行失敗 (Failed):\n").append(parsed.getError()).append("\n");
                                 }
                             }
                         }
@@ -190,7 +195,7 @@ public class HeartBeat {
                     todo.getScheduledTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), 
                     safeText(todo.getDescription())));
             }
-            prompt.append("\n(這些待辦事項已作為喚醒你的條件，不需手動刪除，未來會自動滑出檢查窗口)\n-------------------\n\n");
+            prompt.append("\n(這些待辦事項已作為喚醒你的條件，不需手動刪除，系統已將其標記為已觸發)\n-------------------\n\n");
         }
 
         return prompt.toString();

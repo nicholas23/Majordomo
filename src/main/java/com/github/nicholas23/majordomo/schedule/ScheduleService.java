@@ -147,9 +147,14 @@ public class ScheduleService {
             } catch (Exception e) {
                 log.error("[ScheduleService] 排程任務執行期間發生未預期錯誤: id={}", schedule.getId(), e);
             } finally {
-                // WHY: 對於一次性任務，執行後主動移除 entry 避免記憶體洩漏
+                // WHY: 對於一次性任務，執行後主動移除 entry 並在 DB 中將 enabled 設為 false
                 if (schedule.getType() == ScheduleType.ONE_TIME) {
                     activeFutures.remove(schedule.getId());
+                    scheduleRepository.findById(schedule.getId()).ifPresent(s -> {
+                        s.setEnabled(false);
+                        scheduleRepository.save(s);
+                        log.info("[ScheduleService] 一次性排程已執行完畢，更新資料庫狀態為停用: id={}", s.getId());
+                    });
                     log.debug("[ScheduleService] 已自動移除一次性排程狀態: id={}", schedule.getId());
                 }
             }
@@ -237,6 +242,28 @@ public class ScheduleService {
                 unregisterSchedule(id);
             }
         });
+    }
+
+    /**
+     * 目的：查詢指定 Workspace 的所有排程任務。
+     * 輸入：workspaceId: long
+     * 輸出：List<Schedule>
+     * 限制：無
+     * 副作用：無
+     */
+    public List<Schedule> listByWorkspaceId(long workspaceId) {
+        return scheduleRepository.findByWorkspaceId(workspaceId);
+    }
+
+    /**
+     * 目的：根據 ID 查詢單一排程。
+     * 輸入：id: long
+     * 輸出：Optional<Schedule>
+     * 限制：無
+     * 副作用：無
+     */
+    public java.util.Optional<Schedule> getSchedule(long id) {
+        return scheduleRepository.findById(id);
     }
 }
 

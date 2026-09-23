@@ -39,7 +39,11 @@ public class ExecuteService {
     private static final Logger log = LoggerFactory.getLogger(ExecuteService.class);
 
     // REASONING: Extract CLI constants to avoid magic strings and allow easy modification
-    private static final String GEMINI_CLI_CMD = "gemini";
+    private static final String AGY_CLI_CMD = "agy";
+    private static final String AGY_AGENT_NAME = "majordomo";
+
+    @org.springframework.beans.factory.annotation.Value("${majordomo.cli.include-dirs:}")
+    private String includeDirs;
     // WHY: BasicAgent 不屬於任何 Workspace，使用 -1 作為識別碼
     public static final long BASIC_AGENT_WORKSPACE_ID = -1;
 
@@ -63,6 +67,11 @@ public class ExecuteService {
      * 記錄被主動中止的 historyId，避免最終狀態被覆寫
      */
     private final Set<Long> terminatedHistoryIds = ConcurrentHashMap.newKeySet();
+
+    /**
+     * 依 workspaceId 區分的執行鎖，防止同一工作區或 BasicAgent 同時執行多個 CLI 引發競爭衝突
+     */
+    private final ConcurrentMap<Long, java.util.concurrent.locks.ReentrantLock> workspaceLocks = new ConcurrentHashMap<>();
 
     public ExecuteService(HistoryService historyService
             , @Qualifier("streamReaderExecutor") ExecutorService streamReaderExecutor
@@ -108,27 +117,34 @@ public class ExecuteService {
      * 副作用：建立 History 紀錄、啟動子程序、寫入 stdout/stderr
      */
     ExecutionResult execute(long workspaceId, File dir, String prompt, String command, boolean init) {
-        History history = historyService.createHistory(workspaceId, command);
-
-        int exitValue = -1;
-        HistoryStatus status;
+        java.util.concurrent.locks.ReentrantLock lock = workspaceLocks.computeIfAbsent(workspaceId, k -> new java.util.concurrent.locks.ReentrantLock());
+        lock.lock();
         try {
-            exitValue = runCli(history, dir, prompt, init);
-            status = resolveFinalStatus(history.getId(), exitValue == 0 ? HistoryStatus.COMPLETED : HistoryStatus.FAILED);
-        } catch (RuntimeException e) {
-            log.error("[ExecuteService] CLI 執行異常: historyId={}", history.getId(), e);
-            historyService.appendHistoryLog(history.getId(), ResultTextType.STDERR, "Execution failed: " + e.getMessage() + "\n");
-            status = resolveFinalStatus(history.getId(), HistoryStatus.FAILED);
-        }
+            History history = historyService.createHistory(workspaceId, command);
 
-        historyService.updateHistoryStatus(history.getId(), status);
-        terminatedHistoryIds.remove(history.getId());
-        log.info("[ExecuteService] 執行完成: historyId={}, exitValue={}, status={}", history.getId(), exitValue, status);
-        debugPrintResult(history.getId());
-        if (exitValue != 0) {
-            logAllOutputAndError(history);
+            int exitValue = -1;
+            HistoryStatus status;
+            try {
+                exitValue = runCli(history, dir, prompt, init);
+                status = resolveFinalStatus(history.getId(), isAgyFailure(history.getId(), exitValue)
+                        ? HistoryStatus.FAILED : HistoryStatus.COMPLETED);
+            } catch (RuntimeException e) {
+                log.error("[ExecuteService] CLI 執行異常: historyId={}", history.getId(), e);
+                historyService.appendHistoryLog(history.getId(), ResultTextType.STDERR, "Execution failed: " + e.getMessage() + "\n");
+                status = resolveFinalStatus(history.getId(), HistoryStatus.FAILED);
+            }
+
+            historyService.updateHistoryStatus(history.getId(), status);
+            terminatedHistoryIds.remove(history.getId());
+            log.info("[ExecuteService] 執行完成: historyId={}, exitValue={}, status={}", history.getId(), exitValue, status);
+            debugPrintResult(history.getId());
+            if (exitValue != 0) {
+                logAllOutputAndError(history);
+            }
+            return new ExecutionResult(history.getId(), exitValue, status);
+        } finally {
+            lock.unlock();
         }
-        return new ExecutionResult(history.getId(), exitValue, status);
     }
 
     /**
@@ -155,11 +171,26 @@ public class ExecuteService {
      */
     private void debugPrintResult(long historyId) {
         String outputPreview = historyService.getResultContent(historyId, ResultTextType.STDOUT);
-        GeminiCliJsonOutputParser.GeminiCLiJsonResponse response = GeminiCliJsonOutputParser.parser(outputPreview);
-        if (response != null && response.getStats() != null) {
-            log.debug("tools call info={}", response.getStats().getTools());
-            log.debug("file update info={}", response.getStats().getFiles());
+        AgyCliJsonOutputParser.AgyOutput response = AgyCliJsonOutputParser.parseOutput(outputPreview);
+        if (response != null) {
+            long tokens = response.getUsage() == null ? 0 : response.getUsage().getTotalTokens();
+            log.debug("[ExecuteService] agy result: conversationId={}, turns={}, tokens={}, duration={}s",
+                    response.getConversationId(), response.getNumTurns(), tokens, response.getDurationSeconds());
         }
+    }
+
+    /** agy can report a model or agent failure in JSON while returning a zero process exit code. */
+    private boolean isAgyFailure(long historyId, int exitValue) {
+        if (exitValue != 0) {
+            return true;
+        }
+        String stdout = historyService.getResultContent(historyId, ResultTextType.STDOUT);
+        AgyCliJsonOutputParser.AgyOutput output = AgyCliJsonOutputParser.parseOutput(stdout);
+        if (output != null && "ERROR".equalsIgnoreCase(output.getStatus())) {
+            return true;
+        }
+        return AgyCliJsonOutputParser.parseError(
+                historyService.getResultContent(historyId, ResultTextType.STDERR)) != null;
     }
 
     /**
@@ -356,14 +387,14 @@ public class ExecuteService {
         int exitValue = -1;
         try {
             Process process = commandExecutor.execute(cmd, dir);
-            log.info("[ExecuteService] 啟動 Gemini CLI 子程序: dir={}, pid={}", dir.getAbsolutePath(), process.pid());
+            log.info("[ExecuteService] 啟動 agy CLI 子程序: dir={}, pid={}", dir.getAbsolutePath(), process.pid());
             Future<Void> stdout = readStreamAsync(history.getId(), ResultTextType.STDOUT, process.getInputStream());
             Future<Void> stderr = readStreamAsync(history.getId(), ResultTextType.STDERR, process.getErrorStream());
             // 註冊進程，以便後續中止
             runningProcesses.put(history.getId(), process);
             //等待 process 執行結束
             exitValue = process.waitFor();
-            log.info("[ExecuteService] Gemini CLI 子程序結束: dir={}, pid={}, exitValue={}", dir.getAbsolutePath(), process.pid(), exitValue);
+            log.info("[ExecuteService] agy CLI 子程序結束: dir={}, pid={}, exitValue={}", dir.getAbsolutePath(), process.pid(), exitValue);
             stdout.get(STREAM_READER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             stderr.get(STREAM_READER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (IOException e) {
@@ -449,17 +480,31 @@ public class ExecuteService {
      */
     String[] buildCommand(String prompt, boolean init) {
         List<String> cmd = new ArrayList<>();
-        cmd.add(GEMINI_CLI_CMD);
-        cmd.add("--approval-mode=yolo");
-        if (! init) {
-            cmd.add("--resume");
-        }
-        cmd.add("--sandbox");
+        cmd.add(AGY_CLI_CMD);
+        cmd.add("--agent");
+        cmd.add(AGY_AGENT_NAME);
         cmd.add("--output-format");
         cmd.add("json");
+        if (! init) {
+            cmd.add("--continue");
+        }
+        cmd.add("--dangerously-skip-permissions");
+        addIncludeDirs(cmd);
         cmd.add("--prompt");
         cmd.add(prompt);
         return cmd.toArray(new String[0]);
+    }
+
+    private void addIncludeDirs(List<String> cmd) {
+        if (includeDirs == null || includeDirs.isBlank()) {
+            return;
+        }
+        for (String dir : includeDirs.split("[,\\s]+")) {
+            if (!dir.isBlank()) {
+                cmd.add("--add-dir");
+                cmd.add(dir.trim());
+            }
+        }
     }
 }
 

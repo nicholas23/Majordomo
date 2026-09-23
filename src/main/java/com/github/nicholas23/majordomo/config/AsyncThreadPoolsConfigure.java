@@ -13,18 +13,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Configuration
 public class AsyncThreadPoolsConfigure {
 
+    @Value("${app.scheduler.await-termination-seconds:5}")
+    private int awaitTerminationSeconds;
+
     /**
      * 目的：全局 TaskScheduler（供 ScheduleService 使用，支援 Virtual Thread）
      * 輸入：無
      * 輸出：TaskScheduler - 排程器
      * 限制：應用的生命週期內全域共用
-     * 副作用：配置了優雅停機（30 秒緩衝）
+     * 副作用：配置了優雅停機（由 app.scheduler.await-termination-seconds 設定緩衝）
      */
     @Bean
     public TaskScheduler taskScheduler() {
@@ -32,9 +37,9 @@ public class AsyncThreadPoolsConfigure {
         scheduler.setPoolSize(4);
         scheduler.setThreadFactory(Thread.ofVirtual().name("task-scheduler-", 0).factory());
         scheduler.setThreadNamePrefix("task-scheduler-");
-        // WHY: 啟用優雅停機，確保應用程式關閉時，排程任務有 30 秒緩衝時間完成
+        // WHY: 啟用優雅停機，並支援由屬性配置緩衝時間，避免測試環境過度等待
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
-        scheduler.setAwaitTerminationSeconds(30);
+        scheduler.setAwaitTerminationSeconds(awaitTerminationSeconds);
         return scheduler;
     }
 

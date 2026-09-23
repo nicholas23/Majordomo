@@ -1,5 +1,5 @@
 /**
- * 目的：Gemini CLI 提示詞組裝工具
+ * 目的：Agent CLI 提示詞組裝工具
  * 關鍵項目：
  * 1. 將專案名稱、工作目錄、使用者指令組裝成結構化提示詞
  * 模組：utils
@@ -11,7 +11,7 @@ import com.github.nicholas23.majordomo.workspace.Workspace;
 public class PromptBuilder {
 
     /**
-     * 目的：組裝傳給 Gemini CLI 的結構化提示詞。
+     * 目的：組裝傳給 Agent CLI 的結構化提示詞。
      * 輸入：
      * - w: Workspace - 工作區物件 (可為 null)
      * - userCommand: String - 使用者下達的指令

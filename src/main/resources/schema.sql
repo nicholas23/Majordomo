@@ -74,5 +74,8 @@ CREATE TABLE IF NOT EXISTS agent_todo (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     description VARCHAR(500) NOT NULL,
     scheduled_time TIMESTAMP NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP NOT NULL
 );
+ALTER TABLE agent_todo ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING' NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_agent_todo_status_time ON agent_todo(status, scheduled_time);

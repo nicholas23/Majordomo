@@ -19,8 +19,19 @@ import java.util.List;
 public interface AgentTodoRepository extends CrudRepository<AgentTodo, Long> {
 
     /**
-     * 目的：查詢目前時間點需要觸發的待辦事項
-     * REASONING: 不需要更新為已讀，時間視窗自動滑動，只有落在 start 與 end 之間的才算是短心跳的觸發條件。
+     * 目的：查詢目前時間點需要觸發的待辦事項（狀態為 PENDING 且預定時間已到）
+     * WHY: 透過狀態欄位過濾，徹底避免應用重啟或夜間非心跳時段導致待辦遺漏
+     * 輸入：
+     * - nowTime: 目前檢查時間
+     * 輸出：List<AgentTodo> - 待觸發的待辦事項
+     * 限制：只返回狀態為 PENDING 的項目
+     * 副作用：無
+     */
+    @Query("SELECT * FROM agent_todo WHERE status = 'PENDING' AND scheduled_time <= :nowTime ORDER BY scheduled_time ASC")
+    List<AgentTodo> findPendingTodosToTrigger(@Param("nowTime") LocalDateTime nowTime);
+
+    /**
+     * 目的：查詢目前時間點需要觸發的待辦事項（舊版時間視窗方式，保留相容性）
      * 輸入：
      * - lastCheckTime: 上次心跳檢查時間
      * - nowTime: 目前檢查時間
